@@ -23,21 +23,28 @@ class PushdownAutomaton:
         symbol = self.input_string[self.index]
         stack_top = self.stack[-1] if self.stack else ''
 
+        # Tenta chave normal
         key = (self.state, symbol, stack_top)
         if key in self.transitions:
             next_state, stack_op = self.transitions[key]
-            self.state = next_state
-
-            if stack_op == 'POP' and self.stack:
-                self.stack.pop()
-            elif stack_op != 'ε':
-                self.stack.append(stack_op)
-
-            self.index += 1
-            self.log.append(f"Lido '{symbol}': transição para {next_state}, operação: {stack_op}")
-            return True, self.log[-1]
         else:
-            return False, f"Erro: transição indefinida para ({self.state}, {symbol}, {stack_top})"
+            # Tenta chave com 'ε', ignorando topo da pilha
+            key = (self.state, symbol, 'ε')
+            if key in self.transitions:
+                next_state, stack_op = self.transitions[key]
+            else:
+                return False, f"Erro: transição indefinida para ({self.state}, {symbol}, {stack_top})"
+
+        self.state = next_state
+
+        if stack_op == 'POP' and self.stack:
+            self.stack.pop()
+        elif stack_op != 'ε':
+            self.stack.append(stack_op)
+
+        self.index += 1
+        self.log.append(f"Lido '{symbol}': transição para {next_state}, operação: {stack_op}")
+        return True, self.log[-1]
 
     def is_finished(self):
         return self.index >= len(self.input_string)

@@ -115,65 +115,100 @@ class AutomatonVisualizer(QWidget):
             end_center = self.positions[to_state] + QPointF(radius, radius)
 
             if from_state == to_state:
-                # Loop no estado (arco com seta)
                 path = QPainterPath()
-                center = start_center
-                loop_radius = 25
+                cx = start_center.x()  # Coordenada X do centro do estado
+                cy = start_center.y()  # Coordenada Y do centro do estado
+                state_R = 30           # Raio do círculo do estado
 
-                # Começa na direita do estado (0 graus)
-                path.moveTo(center.x() + loop_radius, center.y())
-                # Arco de 270 graus sentido anti-horário (de 0 até 270)
-                path.arcTo(center.x() - loop_radius, center.y() - loop_radius, 
-                        2*loop_radius, 2*loop_radius, 0, 270)
+                # Pontos de conexão do loop no círculo do estado
+                # Ângulos em radianos (0 é à direita, positivo é anti-horário no Qt)
+                # Ajuste esses ângulos para mudar onde o loop "toca" o estado
+                start_angle_on_state_deg = 45  # Começa no lado superior direito do estado
+                end_angle_on_state_deg = 135   # Termina no lado superior esquerdo do estado
 
+                # No Qt, o eixo Y é invertido, então subtraímos para "subir"
+                p_start_x = cx + state_R * math.cos(math.radians(start_angle_on_state_deg))
+                p_start_y = cy - state_R * math.sin(math.radians(start_angle_on_state_deg))
+                path.moveTo(p_start_x, p_start_y)
+
+                p_end_x = cx + state_R * math.cos(math.radians(end_angle_on_state_deg))
+                p_end_y = cy - state_R * math.sin(math.radians(end_angle_on_state_deg))
+
+                # Ponto de controle para a curva de Bézier quadrática
+                # Define o quão "alto" o loop vai. Ajuste loop_height_factor conforme necessário.
+                loop_height_factor = 3.5 # Multiplicador da altura do loop em relação ao raio
+                ctrl_x = cx
+                ctrl_y = cy - state_R * loop_height_factor - 10 # O -10 é um pequeno espaçamento adicional
+
+                path.quadTo(ctrl_x, ctrl_y, p_end_x, p_end_y)
                 self.scene.addPath(path, QPen(Qt.black, 2))
 
-                # Desenhar seta no fim do arco
-                angle_deg = 270
-                angle_rad = math.radians(angle_deg)
+                # --- Desenhar a ponta da seta para o loop ---
                 arrow_size = 10
+                # Vetor da tangente no ponto final (aproximado pelo vetor do ponto de controle ao ponto final)
+                dx_tangent = p_end_x - ctrl_x
+                dy_tangent = p_end_y - ctrl_y
+                len_tangent = math.hypot(dx_tangent, dy_tangent)
+                if len_tangent == 0: len_tangent = 1
+                
+                udx = dx_tangent / len_tangent # Componente x do vetor unitário da tangente
+                udy = dy_tangent / len_tangent # Componente y do vetor unitário da tangente
 
-                # Ponto no fim do arco
-                arrow_x = center.x() + loop_radius * math.cos(angle_rad)
-                arrow_y = center.y() - loop_radius * math.sin(angle_rad)
+                # Pontos do triângulo da seta
+                # Ponto 1 é a ponta da seta, em p_end
+                arrow_p1 = QPointF(p_end_x, p_end_y)
+                
+                # Base da seta (oposta à ponta)
+                base_x = p_end_x - udx * arrow_size
+                base_y = p_end_y - udy * arrow_size
+                
+                # Vetor perpendicular à tangente para as "asas" da seta
+                # perp_dx = -udy
+                # perp_dy = udx
+                # Simplificado para rotação de 90 graus (pode precisar de ajuste fino se a curva for muito acentuada)
+                # Para um resultado visual mais consistente, pode ser melhor usar um ângulo fixo para as asas da seta.
+                # No entanto, vamos usar a perpendicular para simplicidade agora:
+                
+                angle_rad_tangent = math.atan2(-dy_tangent, dx_tangent) # Note o -dy_tangent para o sistema de coordenadas do Qt
 
-                # Direção da seta (tangente ao arco no ponto final)
-                # Tangente no arco é perpendicular ao raio
-                tangent_angle = angle_rad - math.pi / 2
+                # Pontos para as "asas" da seta
+                angle_offset = math.pi / 6 # 30 graus para cada lado da tangente
 
-                # Pontos da seta
-                p1 = QPointF(arrow_x, arrow_y)
-                p2 = QPointF(
-                    arrow_x + arrow_size * math.cos(tangent_angle + math.pi / 6),
-                    arrow_y - arrow_size * math.sin(tangent_angle + math.pi / 6)
+                arrow_p2 = QPointF(
+                    p_end_x - arrow_size * math.cos(angle_rad_tangent - angle_offset),
+                    p_end_y + arrow_size * math.sin(angle_rad_tangent - angle_offset)
                 )
-                p3 = QPointF(
-                    arrow_x + arrow_size * math.cos(tangent_angle - math.pi / 6),
-                    arrow_y - arrow_size * math.sin(tangent_angle - math.pi / 6)
+                arrow_p3 = QPointF(
+                    p_end_x - arrow_size * math.cos(angle_rad_tangent + angle_offset),
+                    p_end_y + arrow_size * math.sin(angle_rad_tangent + angle_offset)
                 )
-
-                arrow_head = QPolygonF([p1, p2, p3])
-                arrow_item = QGraphicsPolygonItem(arrow_head)
+                
+                arrow_head_poly = QPolygonF([arrow_p1, arrow_p2, arrow_p3])
+                arrow_item = QGraphicsPolygonItem(arrow_head_poly)
                 arrow_item.setBrush(QBrush(Qt.black))
-                arrow_item.setPen(QPen(Qt.black))
+                arrow_item.setPen(QPen(Qt.black, 1)) # Linha fina para o contorno da seta
                 self.scene.addItem(arrow_item)
 
-                # Formata o topo da pilha para exibição
+                # --- Rótulo para o loop ---
+                # (Você já deve ter a lógica de formatação do label_text como discutimos antes)
                 stack_top_display = "ε" if stack_top == "" else stack_top
-
-                # Formata a operação da pilha para exibição
                 if stack_op == "POP":
                     stack_op_display = "ε"
-                # Se você tiver uma representação para "não fazer nada" ou "manter topo", adicione aqui
-                elif stack_op == "ε" or stack_op == "": # Exemplo, se '' significar não mudar pilha
-                    stack_op_display = "ε" # Ou stack_top_display se for para "manter"
-                else: # Assume que qualquer outra coisa é um símbolo para empilhar
+                elif not stack_op : # Se stack_op for None ou string vazia (não POP e não um símbolo)
+                    stack_op_display = "ε" # Ou como você preferir representar "não fazer nada"
+                else:
                     stack_op_display = stack_op
-
                 label_text = f"{symbol}, {stack_top_display} ; {stack_op_display}"
+                
                 label = QGraphicsTextItem(label_text)
-                label.setFont(QFont("Arial", 10))
-                label.setPos(center.x() - loop_radius, center.y() - 2*loop_radius)
+                label.setFont(QFont("Arial", 10)) # Ou a fonte que estiver usando
+
+                # Posicionar o rótulo acima do ponto mais alto do loop (ctrl_x, ctrl_y)
+                # Para centralizar o texto, precisamos da largura e altura do texto.
+                label_rect = label.boundingRect()
+                label_x = ctrl_x - label_rect.width() / 2
+                label_y = ctrl_y - label_rect.height() + 25 # 5px de espaço acima do ápice do loop
+                label.setPos(label_x, label_y)
                 self.scene.addItem(label)
 
             else:
@@ -238,7 +273,6 @@ class AutomatonVisualizer(QWidget):
                 mid_y = (start_pos.y() + end_pos.y()) / 2
                 label.setPos(mid_x - 20, mid_y - 20)
                 self.scene.addItem(label)
-
 
     def highlight_state(self, state):
         for s, item in self.state_items.items():
