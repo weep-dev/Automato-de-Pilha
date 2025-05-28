@@ -158,8 +158,20 @@ class AutomatonVisualizer(QWidget):
                 arrow_item.setPen(QPen(Qt.black))
                 self.scene.addItem(arrow_item)
 
-                # Label do loop acima do arco
-                label = QGraphicsTextItem(f"{symbol}/{stack_top} → {stack_op}")
+                # Formata o topo da pilha para exibição
+                stack_top_display = "ε" if stack_top == "" else stack_top
+
+                # Formata a operação da pilha para exibição
+                if stack_op == "POP":
+                    stack_op_display = "ε"
+                # Se você tiver uma representação para "não fazer nada" ou "manter topo", adicione aqui
+                elif stack_op == "ε" or stack_op == "": # Exemplo, se '' significar não mudar pilha
+                    stack_op_display = "ε" # Ou stack_top_display se for para "manter"
+                else: # Assume que qualquer outra coisa é um símbolo para empilhar
+                    stack_op_display = stack_op
+
+                label_text = f"{symbol}, {stack_top_display} ; {stack_op_display}"
+                label = QGraphicsTextItem(label_text)
                 label.setFont(QFont("Arial", 10))
                 label.setPos(center.x() - loop_radius, center.y() - 2*loop_radius)
                 self.scene.addItem(label)
@@ -207,7 +219,20 @@ class AutomatonVisualizer(QWidget):
                 self.scene.addItem(arrow_item)
 
                 # Label no meio da linha, ligeiramente deslocado
-                label = QGraphicsTextItem(f"{symbol}/{stack_top} → {stack_op}")
+                # Formata o topo da pilha para exibição
+                stack_top_display = "ε" if stack_top == "" else stack_top
+
+                # Formata a operação da pilha para exibição
+                if stack_op == "POP":
+                    stack_op_display = "ε"
+                # Se você tiver uma representação para "não fazer nada" ou "manter topo", adicione aqui
+                elif stack_op == "ε" or stack_op == "": # Exemplo, se '' significar não mudar pilha
+                    stack_op_display = "ε" # Ou stack_top_display se for para "manter"
+                else: # Assume que qualquer outra coisa é um símbolo para empilhar
+                    stack_op_display = stack_op
+
+                label_text = f"{symbol}, {stack_top_display} ; {stack_op_display}"
+                label = QGraphicsTextItem(label_text)
                 label.setFont(QFont("Arial", 10))
                 mid_x = (start_pos.x() + end_pos.x()) / 2
                 mid_y = (start_pos.y() + end_pos.y()) / 2
