@@ -54,9 +54,9 @@ transitions = {
 
 start_state = 'q0'
 start_stack_symbol = 'ε'
-accept_states = {'q1'}
+final_states = {'q1'}
 
-pda = PushdownAutomaton(transitions, start_state, start_stack_symbol, accept_states)
+pda = PushdownAutomaton(transitions, start_state, start_stack_symbol, final_states)
 
 testes = ["ab", "aabb", "aaabbb", "aabbb", "aaabb", "ba", ""]
 
