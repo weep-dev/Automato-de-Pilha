@@ -43,6 +43,7 @@ class PushdownAutomaton:
         return False
 
 
+# Linguagem aⁿbⁿ
 
 transitions = {
     ('q0', 'a', 'ε'): [('q0', 'A')],
