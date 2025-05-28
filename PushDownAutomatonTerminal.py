@@ -1,7 +1,6 @@
 class PushdownAutomaton:
-    def __init__(self, transitions, transition_actions, start_state, start_stack_symbol, accept_states):
+    def __init__(self, transitions, start_state, start_stack_symbol, accept_states):
         self.transitions = transitions
-        self.transition_actions = transition_actions
         self.start_state = start_state
         self.start_stack_symbol = start_stack_symbol
         self.accept_states = accept_states
@@ -28,7 +27,7 @@ class PushdownAutomaton:
             for input_symbol in possible_inputs:
                 key = (state, input_symbol, stack_top)
                 if key in self.transitions:
-                    for next_state, stack_action in self.transition_actions[key]:
+                    for next_state, stack_action in self.transitions[key]:
                         new_stack = stack.copy()
 
                         if stack_action == 'POP':
@@ -46,24 +45,17 @@ class PushdownAutomaton:
 
 
 transitions = {
-    ('q0', 'a', 'ε'),
-    ('q0', 'b', 'A'),
-    ('q1', 'b', 'A'),
-}
-
-
-transition_actions = {
     ('q0', 'a', 'ε'): [('q0', 'A')],
+    ('q0', 'a', 'A'): [('q0', 'A')],  
     ('q0', 'b', 'A'): [('q1', 'POP')],
     ('q1', 'b', 'A'): [('q1', 'POP')],
 }
-
 
 start_state = 'q0'
 start_stack_symbol = 'ε'
 accept_states = {'q1'}
 
-pda = PushdownAutomaton(transitions, transition_actions, start_state, start_stack_symbol, accept_states)
+pda = PushdownAutomaton(transitions, start_state, start_stack_symbol, accept_states)
 
 testes = ["ab", "aabb", "aaabbb", "aabbb", "aaabb", "ba", ""]
 
